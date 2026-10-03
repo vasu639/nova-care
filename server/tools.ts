@@ -313,15 +313,17 @@ export function create_support_ticket(
   issue_type: string,
   reason: string,
   priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium',
-  order_id: string | null = null
+  order_id: string | null = null,
+  owner: string = 'Senior Care Specialist (Priya N.)',
+  expected_update: string = 'Within 24 business hours'
 ): SupportTicket {
   const id = `TKT-${Math.floor(100000 + Math.random() * 900000)}`;
   const now = new Date().toISOString();
 
   run(
-    `INSERT INTO support_tickets (id, customer_id, order_id, issue_type, reason, status, priority, created_at)
-     VALUES (?, ?, ?, ?, ?, 'open', ?, ?)`,
-    [id, customer_id, order_id, issue_type, reason, priority, now]
+    `INSERT INTO support_tickets (id, customer_id, order_id, issue_type, reason, status, priority, created_at, current_owner, expected_next_update, case_summary)
+     VALUES (?, ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?)`,
+    [id, customer_id, order_id, issue_type, reason, priority, now, owner, expected_update, reason]
   );
 
   const ticket = queryOne<SupportTicket>(`SELECT * FROM support_tickets WHERE id = ?`, [id])!;

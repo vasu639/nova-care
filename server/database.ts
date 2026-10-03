@@ -123,7 +123,49 @@ function initSchemaAndSeed(db: Database) {
       reason TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'open',
       priority TEXT NOT NULL DEFAULT 'medium',
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      current_owner TEXT DEFAULT 'Senior Care Specialist (Priya N.)',
+      expected_next_update TEXT DEFAULT 'Within 24 business hours',
+      case_summary TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS timeline_events (
+      id TEXT PRIMARY KEY,
+      order_id TEXT NOT NULL,
+      customer_id TEXT NOT NULL,
+      stage TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      completed INTEGER NOT NULL DEFAULT 0,
+      current INTEGER NOT NULL DEFAULT 0,
+      case_id TEXT,
+      owner TEXT,
+      expected_update TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS evidence_items (
+      id TEXT PRIMARY KEY,
+      order_id TEXT NOT NULL,
+      customer_id TEXT NOT NULL,
+      type TEXT NOT NULL,
+      label TEXT NOT NULL,
+      status TEXT NOT NULL,
+      details TEXT NOT NULL,
+      acknowledged_prior INTEGER NOT NULL DEFAULT 0,
+      timestamp TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS customer_notifications (
+      id TEXT PRIMARY KEY,
+      customer_id TEXT NOT NULL,
+      order_id TEXT,
+      type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      expected_time TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      read INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS refunds (
@@ -233,6 +275,34 @@ function initSchemaAndSeed(db: Database) {
       ('ITEM-2004-1', 'NM-2004', 'PROD-204', 1, 1800.0, 1800.0),
       ('ITEM-3001-1', 'NM-3001', 'PROD-101', 1, 2400.0, 2400.0),
       ('ITEM-4001-1', 'NM-4001', 'PROD-401', 1, 18500.0, 18500.0);
+  `);
+
+  // Seed Visual Timeline Events for Order NM-1001 (Customer Ananya Sharma)
+  db.run(`
+    INSERT INTO timeline_events VALUES
+      ('TLE-1001-1', 'NM-1001', 'C-100', 'placed', 'Order Placed & Confirmed', 'Payment of ₹2,400 completed via UPI. Items packed at Bengaluru Central Warehouse.', '2026-09-26T10:00:00Z', 1, 0, NULL, 'Automated Order Fulfillment', 'Completed'),
+      ('TLE-1001-2', 'NM-1001', 'C-100', 'shipped', 'Shipped via BlueDart', 'Tracking #TRK-BLUEDART-8821 generated. Dispatched from Indiranagar sorting hub.', '2026-09-27T14:00:00Z', 1, 0, NULL, 'BlueDart Logistics', 'Delivered'),
+      ('TLE-1001-3', 'NM-1001', 'C-100', 'delivered', 'Delivered to Doorstep', 'Handed over at Indiranagar address on Sep 29, 2026.', '2026-09-29T14:30:00Z', 1, 1, NULL, 'Carrier Agent #412', 'Active Window (14 Days)'),
+      ('TLE-1001-4', 'NM-1001', 'C-100', 'return_requested', 'Return / Refund Request', 'Customer inquiries under Electronics Policy v2026.1.', '2026-10-03T09:00:00Z', 0, 0, 'NM-RF-4821', 'Nova AI Support Specialist', 'Awaiting User Confirmation'),
+      ('TLE-1001-5', 'NM-1001', 'C-100', 'refund_approved', 'Refund Approved with Restocking Fee', '₹2,280 approved after 5% restocking fee deduction (₹120).', '2026-10-03T09:05:00Z', 0, 0, 'NM-RF-4821', 'Automated Governance Desk', 'Next: Bank Processing'),
+      ('TLE-1001-6', 'NM-1001', 'C-100', 'refund_processed', 'Refund Processed to Original Payment', 'Funds credited to source UPI account ending in •••• 4821.', '2026-10-05T12:00:00Z', 0, 0, 'NM-RF-4821', 'Payment Gateway (HDFC UPI)', 'Estimated 3–5 Business Days');
+  `);
+
+  // Seed Customer-facing Evidence Items
+  db.run(`
+    INSERT INTO evidence_items VALUES
+      ('EVD-1001-1', 'NM-1001', 'C-100', 'invoice', 'Tax Invoice Verified', 'verified', 'Official tax invoice #INV-2026-1001 verified against seller records.', 0, '2026-09-26T10:05:00Z'),
+      ('EVD-1001-2', 'NM-1001', 'C-100', 'otp', 'Carrier Delivery Verification', 'verified', 'Carrier BlueDart marked doorstep delivery completed.', 0, '2026-09-29T14:30:00Z'),
+      ('EVD-1001-3', 'NM-1001', 'C-100', 'photos', 'Item Condition & Box Photo', 'received', 'Customer previously uploaded unboxing photo in ticket #TKT-88120.', 1, '2026-09-30T16:00:00Z'),
+      ('EVD-1001-4', 'NM-1001', 'C-100', 'prior_messages', 'Prior Chat Context', 'verified', 'Prior conversation logs reviewed; customer reported slight static noise.', 1, '2026-09-30T16:10:00Z');
+  `);
+
+  // Seed Proactive Customer Notifications
+  db.run(`
+    INSERT INTO customer_notifications VALUES
+      ('NOTIF-101', 'C-100', 'NM-1001', 'refund_initiated', 'Refund Pre-Approved: Case #NM-RF-4821', 'Your refund of ₹2,280 is pre-approved under Electronics Policy v2026.1 (₹120 restocking fee). Awaiting your confirmation.', 'Ready for Confirmation', '2026-10-03T09:00:00Z', 0),
+      ('NOTIF-102', 'C-100', 'NM-1001', 'return_pickup_scheduled', 'Return Courier Pickup Scheduled', 'BlueDart courier pickup scheduled for Oct 5, 2026 between 10:00 AM – 1:00 PM once confirmed.', 'Oct 5, 10:00 AM - 1:00 PM', '2026-10-03T09:10:00Z', 0),
+      ('NOTIF-103', 'C-100', NULL, 'escalation_assigned', 'Senior Care Specialist Available', 'Senior Specialist Priya N. is on standby for live assistance at any time.', 'Instant Transfer on Demand', '2026-10-03T09:15:00Z', 0);
   `);
 }
 

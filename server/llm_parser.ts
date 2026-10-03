@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Schema } from '@google/genai';
-import { ExtractedIntent } from './types.js';
+import { ExtractedIntent, SupportedLanguage } from './types.js';
 
 export interface ParseResult {
   intents: ExtractedIntent[];
@@ -18,6 +18,8 @@ const ALLOWED_INTENTS = [
   'payment_issue',
   'address_change',
   'warranty_question',
+  'human_agent_request',
+  'greeting',
   'unknown',
 ] as const;
 
@@ -138,6 +140,23 @@ export function deterministicParse(text: string): ParseResult {
       order_id: detectedOrderId,
       product_name: productName,
       confidence: 0.90,
+    });
+  }
+
+  // 9. Human Agent Request / Speak with support directly
+  if (/(?:talk|speak|connect|chat)\s+(?:with|to)\s+(?:a\s+)?(?:human|person|agent|representative|support|specialist)|human\s+support|live\s+agent|support\s+agent\s+directly/i.test(normalized)) {
+    intents.push({
+      intent: 'human_agent_request',
+      order_id: detectedOrderId,
+      confidence: 0.95,
+    });
+  }
+
+  // 10. Interactive Greeting or General Conversational Help Inquiry
+  if (/^(?:hi|hello|hey|greetings|good\s+(?:morning|afternoon|evening)|help|how\s+can\s+i|what\s+can\s+you|what\s+should|what\s+problems)\b/i.test(normalized)) {
+    intents.push({
+      intent: 'greeting',
+      confidence: 0.95,
     });
   }
 
@@ -300,14 +319,15 @@ export interface WordingParams {
   templateResponse: string;
   facts: Record<string, unknown>;
   policyVersion?: string | null;
+  language?: SupportedLanguage;
 }
 
 /**
  * Uses Gemini API to craft customer-friendly, natural conversational wording
- * strictly constrained by the authoritative facts and decision.
+ * strictly constrained by the authoritative facts and decision in the customer's preferred language.
  */
 export async function generateCustomerWording(params: WordingParams): Promise<string> {
-  const { customerName, userMessage, decision, templateResponse, facts } = params;
+  const { customerName, userMessage, decision, templateResponse, facts, language = 'en' } = params;
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (process.env.TEST_MODE === '1' || !apiKey || apiKey === 'MY_GEMINI_API_KEY' || apiKey.trim() === '') {
@@ -316,14 +336,31 @@ export async function generateCustomerWording(params: WordingParams): Promise<st
 
   try {
     const ai = new GoogleGenAI();
-    const prompt = `You are Nova, NovaMart's AI Customer Support Agent.
-Your job is to rewrite the reference response into natural, polite, helpful customer-friendly phrasing for customer ${customerName}.
+    const langPrompt = 
+      language === 'hi'
+        ? 'LANGUAGE: Fluent, polite Hindi (हिंदी). Maintain numerical amounts, Order IDs (e.g. NM-1001), and ticket numbers in standard format.'
+        : language === 'mr'
+          ? 'LANGUAGE: Fluent, polite Marathi (मराठी). Maintain numerical amounts, Order IDs (e.g. NM-1001), and ticket numbers in standard format.'
+          : 'LANGUAGE: Warm, polite, accessible English.';
+
+    const prompt = `You are Nova, NovaMart's friendly, highly interactive AI Customer Support specialist (powered by Gemini 3.8 Flash).
+Your job is to rewrite the reference response into natural, polite, engaging, and customer-friendly conversational phrasing for ${customerName}.
+
+${langPrompt}
+
+CONVERSATIONAL GUIDELINES:
+- Answer what the user is asking directly, clearly, and warmly.
+- When greeting or starting conversations, proactively ask engaging questions:
+  "How can I help you today?"
+  "What problems or questions do you have with your order?"
+  "Would you like me to check an order status, process a return or refund, or do you want to talk to our support agent directly?"
+- Offer natural next steps to keep the conversation easy and interactive.
 
 CRITICAL SAFETY & AUTHORITY RULES:
 1. Preserve the deterministic decision: ${decision} (ANSWER, ASK, ACT, or ESCALATE).
 2. Never alter or round any numbers, money figures (e.g. ₹2,280.00), order IDs (e.g. NM-1001), tracking IDs, or ticket IDs (e.g. TKT-123456).
 3. Do NOT promise unauthorized compensation, actions, or policies outside the reference facts.
-4. Keep the wording clear, friendly, and concise (2-4 sentences max).
+4. Keep the wording clear, friendly, conversational, and concise (2-4 sentences max).
 
 Customer inquiry:
 "${userMessage}"
@@ -334,7 +371,7 @@ Authoritative Reference to communicate:
 Verified facts:
 ${JSON.stringify(facts)}
 
-Output ONLY the final customer-facing reply text.`;
+Output ONLY the final customer-facing reply text in the requested language.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.8-flash',

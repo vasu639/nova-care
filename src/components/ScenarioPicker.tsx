@@ -17,6 +17,22 @@ interface ScenarioPickerProps {
 
 export const SCENARIOS: Scenario[] = [
   {
+    id: 'talk_to_agent',
+    title: 'Talk to Support Agent Directly',
+    category: 'ESCALATE',
+    suggestedCustomerId: 'C-100',
+    message: 'I want to talk to our support agent directly',
+    description: 'Dispatches priority ticket and immediately connects with a human customer care specialist.',
+  },
+  {
+    id: 'interactive_help',
+    title: 'Interactive Help & Guidance',
+    category: 'ANSWER',
+    suggestedCustomerId: 'C-100',
+    message: 'How can you help? What problems can you solve?',
+    description: 'Nova warmly asks how to help, identifies order issues, and provides interactive choice buttons.',
+  },
+  {
     id: 'eligible_refund',
     title: 'Refund with Restocking Cap',
     category: 'ACT',
@@ -100,21 +116,21 @@ export const SCENARIOS: Scenario[] = [
 
 export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario, currentCustomerId }) => {
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 shadow-sm">
+    <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-sm transition-colors">
       <div className="flex items-center gap-2 mb-2.5">
-        <Sparkles className="h-4 w-4 text-emerald-400" />
-        <h3 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+        <Sparkles className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+        <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-200 uppercase tracking-wider">
           Suggested Test Scenarios
         </h3>
-        <span className="text-[11px] text-slate-400">Click any preset to test the agent</span>
+        <span className="text-[11px] text-slate-500 dark:text-slate-400">Click any preset to test the agent</span>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {SCENARIOS.map((sc) => {
-          let badgeColor = 'bg-blue-950/80 text-blue-300 border-blue-800';
-          if (sc.category === 'ACT') badgeColor = 'bg-emerald-950/80 text-emerald-300 border-emerald-800';
-          if (sc.category === 'ASK') badgeColor = 'bg-amber-950/80 text-amber-300 border-amber-800';
-          if (sc.category === 'ESCALATE') badgeColor = 'bg-rose-950/80 text-rose-300 border-rose-800';
+          let badgeColor = 'bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+          if (sc.category === 'ACT') badgeColor = 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+          if (sc.category === 'ASK') badgeColor = 'bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800';
+          if (sc.category === 'ESCALATE') badgeColor = 'bg-rose-50 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800';
 
           const isSuggestedUser = sc.suggestedCustomerId === currentCustomerId;
 
@@ -122,7 +138,7 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
             <button
               key={sc.id}
               onClick={() => onSelectScenario(sc)}
-              className="text-left p-2.5 rounded-lg bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 transition group flex flex-col justify-between"
+              className="text-left p-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600 transition group flex flex-col justify-between cursor-pointer"
             >
               <div>
                 <div className="flex items-center justify-between gap-1 mb-1">
@@ -130,15 +146,15 @@ export const ScenarioPicker: React.FC<ScenarioPickerProps> = ({ onSelectScenario
                     {sc.category}
                   </span>
                   <span className={`text-[10px] font-mono px-1 rounded ${
-                    isSuggestedUser ? 'text-indigo-300 bg-indigo-950/60' : 'text-slate-500'
+                    isSuggestedUser ? 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60' : 'text-slate-400 dark:text-slate-500'
                   }`}>
                     {sc.suggestedCustomerId}
                   </span>
                 </div>
-                <div className="font-medium text-xs text-slate-200 group-hover:text-white line-clamp-1 mb-1">
+                <div className="font-medium text-xs text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-white line-clamp-1 mb-1">
                   {sc.title}
                 </div>
-                <div className="text-[11px] text-slate-400 line-clamp-2 leading-tight">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-tight">
                   {sc.description}
                 </div>
               </div>

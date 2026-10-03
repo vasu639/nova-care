@@ -1,4 +1,5 @@
 export type DecisionType = 'ANSWER' | 'ASK' | 'ACT' | 'ESCALATE';
+export type SupportedLanguage = 'en' | 'hi' | 'mr';
 
 export interface Customer {
   id: string;
@@ -81,6 +82,9 @@ export interface SupportTicket {
   status: 'open' | 'in_review' | 'resolved';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   created_at: string;
+  current_owner?: string;
+  expected_next_update?: string;
+  case_summary?: string;
 }
 
 export interface RefundRecord {
@@ -125,6 +129,8 @@ export interface ExtractedIntent {
     | 'payment_issue'
     | 'address_change'
     | 'warranty_question'
+    | 'human_agent_request'
+    | 'greeting'
     | 'unknown';
   order_id?: string;
   product_name?: string;
@@ -148,6 +154,80 @@ export interface ExecutedAction {
   payload: Record<string, unknown>;
 }
 
+// -------------------------------------------------------------
+// Customer-Facing Trust & Transparency Models
+// -------------------------------------------------------------
+
+export interface WhatWeCheckedItem {
+  key: string;
+  label: string;
+  status: 'verified' | 'pending' | 'flagged' | 'not_applicable';
+  customerDescription: string;
+  valueDisplay?: string;
+}
+
+export interface ActionPreview {
+  type: 'refund' | 'return';
+  order_id: string;
+  item_name: string;
+  order_total: number;
+  requested_amount: number;
+  eligible_amount: number;
+  restocking_fee: number;
+  restocking_fee_percent: number;
+  final_amount: number;
+  expected_processing_time: string;
+  payment_method_masked: string;
+  case_id: string;
+  policy_version: string;
+  confirmed: boolean;
+  requires_confirmation: boolean;
+}
+
+export type TimelineStage = 
+  | 'placed' 
+  | 'shipped' 
+  | 'delivered' 
+  | 'return_requested' 
+  | 'refund_approved' 
+  | 'refund_processed';
+
+export interface TimelineEvent {
+  id: string;
+  order_id: string;
+  stage: TimelineStage;
+  title: string;
+  description: string;
+  timestamp: string;
+  completed: boolean;
+  current: boolean;
+  case_id?: string;
+  owner?: string;
+  expected_update?: string;
+}
+
+export interface EvidenceItem {
+  id: string;
+  type: 'photos' | 'invoice' | 'otp' | 'prior_messages';
+  label: string;
+  status: 'verified' | 'received' | 'pending' | 'not_required';
+  details: string;
+  acknowledgedPrior: boolean;
+  timestamp?: string;
+}
+
+export interface CustomerNotification {
+  id: string;
+  customer_id: string;
+  order_id?: string;
+  type: 'refund_initiated' | 'refund_delayed' | 'refund_completed' | 'return_pickup_scheduled' | 'escalation_assigned';
+  title: string;
+  message: string;
+  expected_time: string;
+  created_at: string;
+  read: boolean;
+}
+
 export interface SupportAgentResponse {
   decision: DecisionType;
   response: string;
@@ -161,4 +241,12 @@ export interface SupportAgentResponse {
     type: 'orders' | 'intents' | 'actions';
     options: Array<{ id: string; label: string; details?: string }>;
   };
+  language?: SupportedLanguage;
+  what_we_checked?: WhatWeCheckedItem[];
+  action_preview?: ActionPreview | null;
+  trust_format_text?: string | null;
+  timeline_events?: TimelineEvent[];
+  evidence_items?: EvidenceItem[];
+  masked_payment?: string;
+  proactive_notifications?: CustomerNotification[];
 }
