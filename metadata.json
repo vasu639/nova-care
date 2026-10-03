@@ -1,0 +1,6 @@
+{
+  "name": "NovaMart AI Customer Support Agent",
+  "description": "Safety-first, agentic e-commerce support system that executes deterministic decisions (ANSWER, ASK, ACT, ESCALATE) with policy versioning, evidence verification, and fraud safeguards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
